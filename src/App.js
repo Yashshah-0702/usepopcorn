@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const tempMovieData = [
   {
@@ -51,9 +51,29 @@ const tempWatchedData = [
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
+const KEY = "297cb8f";
 export default function App() {
-  const [movies, setMovies] = useState(tempMovieData);
-  const [watched, setWatched] = useState(tempWatchedData);
+  const [movies, setMovies] = useState([]);
+  const [watched, setWatched] = useState([]);
+  const [isLoading,setIsLoading] = useState(false)
+  const query = "Dark Knight";
+
+  useEffect( function(){
+    async function fetchData(){
+      setIsLoading(true)
+      const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=${query}`);
+      const data = await res.json();
+      setMovies(data.Search);
+      setIsLoading(false)
+    }
+    fetchData();
+    // fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=Dark Knight`)
+    //   .then((res) => res.json())
+    //   .then((data) =>{ 
+    //     // console.log(data)
+    //    setMovies(data.Search) });
+  } , [])
+  
   return (
     <>
       <NavBar>
@@ -62,7 +82,8 @@ export default function App() {
       </NavBar>
       <Main>
         <Box>
-          <MovieList movies={movies} />
+          {isLoading ? <Loader/>:<MovieList movies={movies} />}
+          
         </Box>
         <Box>
           <WatchedSummary watched={watched} />
@@ -71,6 +92,10 @@ export default function App() {
       </Main>
     </>
   );
+}
+
+function Loader(){
+  return <p className="loader">Loading...</p>
 }
 
 function NavBar({ children }) {
@@ -82,7 +107,10 @@ function NavBar({ children }) {
   );
 }
 NavBar.propTypes = {
-  children: PropTypes.func,
+  children: PropTypes.oneOfType([
+    PropTypes.node,
+    PropTypes.arrayOf(PropTypes.node),
+  ]).isRequired,
 };
 function Logo() {
   return (
@@ -112,14 +140,17 @@ function NumResults({ movies }) {
   );
 }
 NumResults.propTypes = {
-  movies: PropTypes.func,
+  movies: PropTypes.array.isRequired,
 };
 
 function Main({ children }) {
   return <main className="main">{children}</main>;
 }
 Main.propTypes = {
-  children: PropTypes.func,
+  children: PropTypes.oneOfType([
+    PropTypes.node,
+    PropTypes.arrayOf(PropTypes.node),
+  ]).isRequired,
 };
 function Box({ children }) {
   const [isOpen, setIsOpen] = useState(true);
@@ -133,7 +164,10 @@ function Box({ children }) {
   );
 }
 Box.propTypes = {
-  children: PropTypes.func,
+  children: PropTypes.oneOfType([
+    PropTypes.node,
+    PropTypes.arrayOf(PropTypes.node),
+  ]).isRequired,
 };
 function MovieList({ movies }) {
   return (
@@ -176,8 +210,6 @@ Movie.propTypes = {
     imdbID: PropTypes.string,
   }),
 };
-
-
 
 function WatchedSummary({ watched }) {
   const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
